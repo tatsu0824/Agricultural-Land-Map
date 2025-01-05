@@ -60,7 +60,7 @@
           mapTypeId: 'satellite',
           tilt: 45,
         });
-        sheetNames.forEach(function(sheetName, index) {
+        sheetNames(function(sheetName, index) {
           var requestURL = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${sheetName}?key=${API_KEY}`;
           var request = new XMLHttpRequest();
           request.open('GET', requestURL, true);
