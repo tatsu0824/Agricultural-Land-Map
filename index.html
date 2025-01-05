@@ -2,37 +2,43 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>sheet2gmap</title>
+    <title>Agricultural-Land-Map</title>
     <style>
-      #map { height: 100%; }
-      html, body { height: 100%; margin: 0; padding: 0; }
+      #map {
+        height: 100%;
+      }
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
       #sidebar {
         position: absolute;
-        top: 10%;
-        left: 72%;
-        width: 25%;
-        height: 40%;
+        top: 0%;
+        left: 82%;
+        width: 12%;
+        height: 100%;
         border: 1px solid #666;
         padding: 6px;
         background-color: white;
         font-family: Meriyo UI;
-        font-size: 14px;
+        font-size: 11px;
       }
     </style>
   </head>
   <body>
     <div id="map"></div>
     <div id="sidebar"></div>
+    <script src="constants.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?language=ja&region=JP&key=AIzaSyAkSgFV_KFMsDDtmUicp9udYCiTAeIVR5o&callback=initMap" async defer></script>
     <script>
-      const SHEET_ID = "1d2Nqzht-0CZiLu5HTtz3Xu8EoBidxF31K9BxobooriQ"; // スプレッドシートID
-      const API_KEY = "AIzaSyAkSgFV_KFMsDDtmUicp9udYCiTAeIVR5o";   // Google Cloud APIキー
-
+      var map;
+      var marker = [];
+      var infoWindow = [];
+      var windowOpened;
+      var sheetNames = ['農地一覧'];
       function parseData(data) {
-        if (!data || !data.values || data.values.length === 0) {
-          console.error('No data found in the spreadsheet');
-          return [];
-        }
-        var keys = data.values[0];
+        var keys = data.values[];
         var markerData = [];
         data.values.forEach(function(value, i) {
           if (i > 0) {
@@ -45,45 +51,83 @@
         });
         return markerData;
       }
-
       function initMap() {
         var target = document.getElementById('map');
-        var centerp = {lat: 35.6679191, lng: 139.4606805};
-
+        var centerp = {lat: 35.3893811, lng: 139.4341696};
         map = new google.maps.Map(target, {
           center: centerp,
-          zoom: 7,
+          zoom: 16,
+          mapTypeId: 'satellite',
+          tilt: 45,
         });
-
-        var request = new XMLHttpRequest();
-        request.open('GET', `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/農地一覧?key=${API_KEY}`, true);
-        request.responseType = 'json';
-
-        request.onload = function () {
-          if (this.status === 200) {
+        sheetNames.forEach(function(sheetName, index) {
+          var requestURL = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${sheetName}?key=${API_KEY}`;
+          var request = new XMLHttpRequest();
+          request.open('GET', requestURL, true);
+          request.responseType = 'json';
+          request.onload = function() {
             var data = this.response;
             var markerData = parseData(data);
-            setData(markerData);
-          } else {
-            console.error('Failed to load data: ', this.status, this.statusText);
-          }
-        };
+            if (markerData.length > 0) {
+              setData(markerData, sheetName, index);  // 修正: setDataにシート名とインデックスを渡す
+            }
+          };
+          request.send();
+        });
+      }
+      function addMarker(i, data) {
+        var markerLatLng = new google.maps.LatLng({
+          lat: Number(data['緯度']),
+          lng: Number(data['経度'])
+        });
+        marker[i] = new google.maps.Marker({
+          position: markerLatLng,
+          map: map
+        });
+        var infoContent = '<div style="font-size:18px;font-weight:bold;margin-bottom:10px;">' + data['名称'] + '</div>' +
+                          '<div style="font-size:12px;font-weight:bold;margin-bottom:10px;">' + '観測日時：' + data['日付']+ ' ' +  data['時間'] + '</div>' +
+                          '<div style="font-size:12px;font-weight:bold;margin-bottom:10px;">' + '貯水深さ：' + data['井戸深度（cm）'] + ' cm' + '</div>' +
+                          '<div style="font-size:12px;font-weight:bold;margin-bottom:10px;">' + '合計流量：' + data['総流量（mL）'] + ' ml' + '</div>' +
+                          '<div style="font-size:12px;font-weight:bold;margin-bottom:10px;">' + '瞬間流量：' + data['瞬間流量（mL）'] + ' ml' + '</div>' +
+                          '<div style="font-size:12px;font-weight:bold;margin-bottom:10px;">' + '水質検査：' + '<a href="' + data['水質検査結果'] + '" target="_blank">'  + '水質検査結果を見る'  + '</a></div>';
+        infoWindow[i] = new google.maps.InfoWindow({
+          content: infoContent
+        });
+        marker[i].addListener('click', (function(markerCopy, infoWindow) {
+          return function() {
+            if (windowOpened) {
+              windowOpened.close();
+            }
+            infoWindow.open(map, markerCopy);
+            windowOpened = infoWindow;
+          };
+        })(marker[i], infoWindow[i]));
+        markerEvent(i);
+      }
+      function setData(markerData, sheetName, index){
+        var data = markerData.find(d => d['名称'] === sheetName);
+        if (data && data['緯度'] && data['経度']) {
+          addMarker(index, data);
+        }
 
-        request.onerror = function () {
-          console.error('Error during the request');
-        };
-
-        request.send();
+        var sidebar_html = document.getElementById("sidebar").innerHTML;
+        sidebar_html += `<a href="javascript:openWindow(${index})">${sheetName}</a><br />`;
+        document.getElementById("sidebar").innerHTML = sidebar_html;
       }
 
-      function setData(markerData) {
-        // サイドバーとマーカーの処理
+      function markerEvent(i) {
+        marker[i].addListener('click', function() {
+          openWindow(i);
+        });
       }
-    </script>
-    <script
-      src="https://maps.googleapis.com/maps/api/js?language=ja&region=JP&key=YOUR_API_KEY&callback=initMap"
-      async
-      defer>
+      function openWindow(index) {
+        if (windowOpened) {
+          windowOpened.close();
+        }
+        infoWindow[index].open(map, marker[index]);
+        windowOpened = infoWindow[index];
+       
+      }
     </script>
   </body>
 </html>
