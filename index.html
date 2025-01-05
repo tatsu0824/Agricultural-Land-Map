@@ -51,30 +51,30 @@
         });
         return markerData;
       }
-      function initMap() {
-        var target = document.getElementById('map');
-        var centerp = {lat: 35.3893811, lng: 139.4341696};
-        map = new google.maps.Map(target, {
-          center: centerp,
-          zoom: 16,
-          mapTypeId: 'satellite',
-          tilt: 45,
-        });
-        sheetNames(function(sheetName, index) {
-          var requestURL = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${sheetName}?key=${API_KEY}`;
-          var request = new XMLHttpRequest();
-          request.open('GET', requestURL, true);
-          request.responseType = 'json';
-          request.onload = function() {
-            var data = this.response;
-            var markerData = parseData(data);
-            if (markerData.length > 0) {
-              setData(markerData, sheetName, index);  // 修正: setDataにシート名とインデックスを渡す
-            }
-          };
-          request.send();
-        });
-      }
+      // function initMap() {
+      //   var target = document.getElementById('map');
+      //   var centerp = {lat: 35.3893811, lng: 139.4341696};
+      //   map = new google.maps.Map(target, {
+      //     center: centerp,
+      //     zoom: 16,
+      //     mapTypeId: 'satellite',
+      //     tilt: 45,
+      //   });
+      //   sheetNames.forEach(function(sheetName, index) {
+      //     var requestURL = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${sheetName}?key=${API_KEY}`;
+      //     var request = new XMLHttpRequest();
+      //     request.open('GET', requestURL, true);
+      //     request.responseType = 'json';
+      //     request.onload = function() {
+      //       var data = this.response;
+      //       var markerData = parseData(data);
+      //       if (markerData.length > 0) {
+      //         setData(markerData, sheetName, index);  // 修正: setDataにシート名とインデックスを渡す
+      //       }
+      //     };
+      //     request.send();
+      //   });
+      // }
       function addMarker(i, data) {
         var markerLatLng = new google.maps.LatLng({
           lat: Number(data['緯度']),
