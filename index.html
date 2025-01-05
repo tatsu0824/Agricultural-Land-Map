@@ -2,16 +2,10 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>Agricultural-Land-Map</title>
+    <title>sheet2gmap</title>
     <style>
-      #map {
-        height: 100%;
-      }
-      html, body {
-        height: 100%;
-        margin: 0;
-        padding: 0;
-      }
+      #map { height: 100%; }
+      html, body { height: 100%; margin: 0; padding: 0; }
       #sidebar {
         position: absolute;
         top: 10%;
@@ -28,16 +22,16 @@
   </head>
   <body>
     <div id="map"></div>
-    <td><div id="sidebar"></div></td>
-    <script src="constants.js"></script>
-    <script src="https://maps.googleapis.com/maps/api/js?language=ja&region=JP&key=AIzaSyAkSgFV_KFMsDDtmUicp9udYCiTAeIVR5o&callback=initMap" async defer></script>
+    <div id="sidebar"></div>
     <script>
-      var map;
-      var marker = [];
-      var infoWindow = [];
-      var windowOpened;
+      const SHEET_ID = "1d2Nqzht-0CZiLu5HTtz3Xu8EoBidxF31K9BxobooriQ"; // スプレッドシートID
+      const API_KEY = "AIzaSyAkSgFV_KFMsDDtmUicp9udYCiTAeIVR5o";   // Google Cloud APIキー
 
       function parseData(data) {
+        if (!data || !data.values || data.values.length === 0) {
+          console.error('No data found in the spreadsheet');
+          return [];
+        }
         var keys = data.values[0];
         var markerData = [];
         data.values.forEach(function(value, i) {
@@ -66,59 +60,30 @@
         request.responseType = 'json';
 
         request.onload = function () {
-          var data = this.response;
-          var markerData = parseData(data);
-          setData(markerData);
+          if (this.status === 200) {
+            var data = this.response;
+            var markerData = parseData(data);
+            setData(markerData);
+          } else {
+            console.error('Failed to load data: ', this.status, this.statusText);
+          }
+        };
+
+        request.onerror = function () {
+          console.error('Error during the request');
         };
 
         request.send();
       }
 
-      function addMarker(i, data) {
-        var markerLatLng = new google.maps.LatLng({
-          lat: Number(data['緯度']),
-          lng: Number(data['経度'])
-        });
-        marker[i] = new google.maps.Marker({
-          position: markerLatLng,
-          map: map
-        });
-
-        var info = '<div style="font-size:18px;font-weight:bold;margin-bottom:10px;">' + data['名称'] + '</div>';
-        infoWindow[i] = new google.maps.InfoWindow({
-          content: info
-        });
-
-        markerEvent(i);
+      function setData(markerData) {
+        // サイドバーとマーカーの処理
       }
-
-      function setData(markerData){
-        var sidebar_html = "";
-        for (var i = 0; i < markerData.length; i++) {
-          var latitude = markerData[i]['緯度'];
-          if (!latitude) { continue; }
-          addMarker(i, markerData[i]);
-          var name = markerData[i]['名称'];
-
-          sidebar_html += `<b>${i + 1}</b> <a href="javascript:openWindow(${i})">${name}<\/a><br />`;
-        }
-
-        document.getElementById("sidebar").innerHTML = `<a target="_blank" href="https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit?usp=sharing">元データ(Google スプレッドシート)</a><br /><a target="_blank" href="https://github.com/champierre/sheet2gmap">ソースコード(GitHub)</a><br /><br />` + sidebar_html;
-      }
-
-      function markerEvent(i) {
-        marker[i].addListener('click', function() {
-          openWindow(i);
-        });
-      }
-
-      function openWindow(i) {
-        if(windowOpened){
-          windowOpened.close();
-        }
-        infoWindow[i].open(map, marker[i]);
-        windowOpened = infoWindow[i];
-      }
+    </script>
+    <script
+      src="https://maps.googleapis.com/maps/api/js?language=ja&region=JP&key=YOUR_API_KEY&callback=initMap"
+      async
+      defer>
     </script>
   </body>
 </html>
