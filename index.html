@@ -37,20 +37,20 @@
       var infoWindow = [];
       var windowOpened;
       var sheetNames = '農地一覧';
-      // function parseData(data) {
-      //   var keys = data.values[];
-      //   var markerData = [];
-      //   data.values.forEach(function(value, i) {
-      //     if (i > 0) {
-      //       var hash = {};
-      //       value.forEach(function(d, j) {
-      //         hash[keys[j]] = d;
-      //       });
-      //       markerData.push(hash);
-      //     }
-      //   });
-      //   return markerData;
-      // }
+      function parseData(data) {
+        var keys = data.values[];
+        var markerData = [];
+        data.values.forEach(function(value, i) {
+          if (i > 0) {
+            var hash = {};
+            value.forEach(function(d, j) {
+              hash[keys[j]] = d;
+            });
+            markerData.push(hash);
+          }
+        });
+        return markerData;
+      }
       function initMap() {
         var target = document.getElementById('map');
         var centerp = {lat: 35.3893811, lng: 139.4341696};
